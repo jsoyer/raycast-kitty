@@ -63,6 +63,7 @@
     "yaml": "^2.8.2"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.4",
     "@raycast/eslint-config": "^2.1.1",
     "@types/node": "25.3.0",
     "@types/react": "19.2.14",

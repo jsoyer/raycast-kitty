@@ -1,7 +1,3 @@
-import { FlatCompat } from "@eslint/eslintrc";
+import raycastConfig from "@raycast/eslint-config";  
+export default raycastConfig;
 
-const compat = new FlatCompat({
-  baseDirectory: import.meta.dirname,
-});
-
-export default compat.extends("@raycast");

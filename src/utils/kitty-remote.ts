@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import { existsSync, readdirSync, statSync } from "fs";
 import { homedir } from "os";
 import { getPreferenceValues } from "@raycast/api";
@@ -24,7 +24,7 @@ function resolveKittenPath(): string {
   if (detectedKittenPath) return detectedKittenPath;
 
   try {
-    const p = execSync("which kitten", { encoding: "utf-8", timeout: 2000 }).trim();
+    const p = execFileSync("which", ["kitten"], { encoding: "utf-8", timeout: 2000 }).trim();
     if (p && existsSync(p)) {
       detectedKittenPath = p;
       return detectedKittenPath;
@@ -62,13 +62,18 @@ export function getSocketPath(): string {
 
 export function runKittenCommand(args: string[]): string {
   const socket = getSocketPath();
-  const cmd = `${resolveKittenPath()} @ --to unix:${socket} ${args.join(" ")}`;
-  return execSync(cmd, { encoding: "utf-8", timeout: TIMEOUT }).trim();
+  return execFileSync(resolveKittenPath(), ["@", "--to", `unix:${socket}`, ...args], {
+    encoding: "utf-8",
+    timeout: TIMEOUT,
+  }).trim();
 }
 
 export function isKittyRunning(): boolean {
   try {
-    execSync("pgrep -f kitty.app", { encoding: "utf-8", timeout: 3000 });
+    execFileSync("pgrep", ["-f", "kitty.app/Contents/MacOS/kitty"], {
+      encoding: "utf-8",
+      timeout: 3000,
+    });
     return true;
   } catch {
     return false;
@@ -80,12 +85,13 @@ export function isSocketAvailable(): boolean {
 }
 
 export function activateKitty(): void {
-  execSync(`osascript -e 'tell application "kitty" to activate'`, { timeout: 3000 });
+  execFileSync("osascript", ["-e", 'tell application "kitty" to activate'], { timeout: 3000 });
 }
 
 export function launchKittyApp(args?: string[]): void {
-  const extra = args?.length ? ` --args ${args.join(" ")}` : "";
-  execSync(`open -a kitty${extra}`, { timeout: 5000 });
+  const cmd = ["-a", "kitty"];
+  if (args?.length) cmd.push("--args", ...args);
+  execFileSync("open", cmd, { timeout: 5000 });
 }
 
 export async function ensureKittyRunning(): Promise<void> {
@@ -145,8 +151,7 @@ export function focusWindow(windowId: number): void {
 }
 
 export function sendText(windowId: number, text: string): void {
-  const escaped = text.replace(/'/g, "'\\''");
-  runKittenCommand(["send-text", `--match=id:${windowId}`, `'${escaped}\n'`]);
+  runKittenCommand(["send-text", `--match=id:${windowId}`, `${text}\n`]);
 }
 
 export function closeTab(tabId: number): void {

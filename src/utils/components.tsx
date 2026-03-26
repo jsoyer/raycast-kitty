@@ -27,7 +27,7 @@ ls -la /tmp/kitty-socket-*
 And test remote control:
 
 \`\`\`bash
-kitten @ --to unix:/tmp/kitty-socket-$(pgrep -x kitty) ls
+kitten @ --to unix:/tmp/kitty-socket-$(pgrep -f kitty.app) ls
 \`\`\`
 
 ## Custom Socket Path

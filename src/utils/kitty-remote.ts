@@ -1,14 +1,53 @@
 import { execSync } from "child_process";
 import { existsSync, readdirSync, statSync } from "fs";
+import { homedir } from "os";
 import { getPreferenceValues } from "@raycast/api";
 import type { KittyOSWindow } from "./types";
 
 interface Preferences {
   socketPath: string;
+  kittenPath: string;
 }
 
-const KITTEN_PATH = "/Applications/kitty.app/Contents/MacOS/kitten";
 const TIMEOUT = 5000;
+
+const KITTEN_CANDIDATES = [
+  "/Applications/kitty.app/Contents/MacOS/kitten",
+  `${homedir()}/Applications/kitty.app/Contents/MacOS/kitten`,
+  "/opt/homebrew/bin/kitten",
+  "/usr/local/bin/kitten",
+];
+
+let resolvedKittenPath: string | undefined;
+
+function resolveKittenPath(): string {
+  if (resolvedKittenPath) return resolvedKittenPath;
+
+  const { kittenPath } = getPreferenceValues<Preferences>();
+  if (kittenPath && existsSync(kittenPath)) {
+    resolvedKittenPath = kittenPath;
+    return resolvedKittenPath;
+  }
+
+  try {
+    const p = execSync("which kitten", { encoding: "utf-8", timeout: 2000 }).trim();
+    if (p && existsSync(p)) {
+      resolvedKittenPath = p;
+      return resolvedKittenPath;
+    }
+  } catch {
+    // not in PATH, try known locations
+  }
+
+  for (const candidate of KITTEN_CANDIDATES) {
+    if (existsSync(candidate)) {
+      resolvedKittenPath = candidate;
+      return resolvedKittenPath;
+    }
+  }
+
+  throw new Error("kitten not found — set the path in the Kitten Path extension preference");
+}
 
 function findKittySocket(): string | undefined {
   try {
@@ -29,13 +68,13 @@ export function getSocketPath(): string {
 
 export function runKittenCommand(args: string[]): string {
   const socket = getSocketPath();
-  const cmd = `${KITTEN_PATH} @ --to unix:${socket} ${args.join(" ")}`;
+  const cmd = `${resolveKittenPath()} @ --to unix:${socket} ${args.join(" ")}`;
   return execSync(cmd, { encoding: "utf-8", timeout: TIMEOUT }).trim();
 }
 
 export function isKittyRunning(): boolean {
   try {
-    execSync("pgrep -x kitty", { encoding: "utf-8", timeout: 3000 });
+    execSync("pgrep -f kitty.app", { encoding: "utf-8", timeout: 3000 });
     return true;
   } catch {
     return false;

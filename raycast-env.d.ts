@@ -9,7 +9,9 @@
 
 type ExtensionPreferences = {
   /** Socket Path - Path to the Kitty remote control socket. Leave empty to auto-detect /tmp/kitty-socket-{pid} */
-  "socketPath": string
+  "socketPath": string,
+  /** Kitten Path - Path to the kitten binary. Leave empty to auto-detect from PATH and standard locations */
+  "kittenPath": string
 }
 
 /** Preferences accessible in all the extension's commands */

@@ -4,11 +4,6 @@ import { homedir } from "os";
 import { getPreferenceValues } from "@raycast/api";
 import type { KittyOSWindow } from "./types";
 
-interface Preferences {
-  socketPath: string;
-  kittenPath: string;
-}
-
 const TIMEOUT = 5000;
 
 const KITTEN_CANDIDATES = [
@@ -18,22 +13,21 @@ const KITTEN_CANDIDATES = [
   "/usr/local/bin/kitten",
 ];
 
-let resolvedKittenPath: string | undefined;
+let detectedKittenPath: string | undefined;
 
 function resolveKittenPath(): string {
-  if (resolvedKittenPath) return resolvedKittenPath;
-
   const { kittenPath } = getPreferenceValues<Preferences>();
   if (kittenPath && existsSync(kittenPath)) {
-    resolvedKittenPath = kittenPath;
-    return resolvedKittenPath;
+    return kittenPath;
   }
+
+  if (detectedKittenPath) return detectedKittenPath;
 
   try {
     const p = execSync("which kitten", { encoding: "utf-8", timeout: 2000 }).trim();
     if (p && existsSync(p)) {
-      resolvedKittenPath = p;
-      return resolvedKittenPath;
+      detectedKittenPath = p;
+      return detectedKittenPath;
     }
   } catch {
     // not in PATH, try known locations
@@ -41,8 +35,8 @@ function resolveKittenPath(): string {
 
   for (const candidate of KITTEN_CANDIDATES) {
     if (existsSync(candidate)) {
-      resolvedKittenPath = candidate;
-      return resolvedKittenPath;
+      detectedKittenPath = candidate;
+      return detectedKittenPath;
     }
   }
 
